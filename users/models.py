@@ -1,11 +1,14 @@
 from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.models import PermissionsMixin
 from django.db import models
-from django.contrib.auth.models import UserManager
+
+from users.managers import CustomUserManager
+
 
 # Create your models here.
 
 
-class User(AbstractBaseUser):
+class User(AbstractBaseUser, PermissionsMixin):
     """Модель пользователя с email в качестве username"""
 
     username = None
@@ -18,8 +21,14 @@ class User(AbstractBaseUser):
         upload_to="users/avatars/", null=True, blank=True, verbose_name="Аватар", help_text="Подгрузите ваш аватар"
     )
 
+    is_staff = models.BooleanField(default=False, verbose_name="Статус персонала")
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+    is_superuser = models.BooleanField(default=False, verbose_name="Статус суперпользователя")
+
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
+
+    objects = CustomUserManager()
 
     class Meta:
         verbose_name = "Пользователь"
