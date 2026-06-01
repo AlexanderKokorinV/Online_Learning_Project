@@ -4,7 +4,6 @@ from django.db import models
 
 from users.managers import CustomUserManager
 
-
 # Create your models here.
 
 

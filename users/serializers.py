@@ -6,6 +6,7 @@ from users.models import User
 
 class UserRegisterSerializer(ModelSerializer):
     """Сериализатор для регистрации пользователя"""
+
     password = serializers.CharField(write_only=True)  # пароль только для записи
 
     class Meta:
@@ -23,10 +24,11 @@ class UserRegisterSerializer(ModelSerializer):
         )
         return user
 
+
 class UserProfileSerializer(ModelSerializer):
     """Сериализатор для профиля пользователя"""
 
     class Meta:
         model = User
         fields = ["id", "email", "phone_number", "city", "avatar"]
-        read_only_fields = ["email"] # email доступен только для чтения
+        read_only_fields = ["email"]  # email доступен только для чтения
