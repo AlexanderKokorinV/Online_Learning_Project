@@ -25,13 +25,38 @@ class UserRegisterSerializer(ModelSerializer):
         )
         return user
 
+class UserPaymentsHystorySerializer(ModelSerializer):
+    """Сериализатор для истории платежей пользователя"""
+    paid_course = CourseSerializer(read_only=True)
+    paid_lesson = LessonSerializer(read_only=True)
+
+    class Meta:
+        model = Payments
+        fields = (
+            "id",
+            "user",
+            "payment_date",
+            "paid_course",
+            "paid_lesson",
+            "payment_amount",
+            "payment_type",
+        )
+
 
 class UserProfileSerializer(ModelSerializer):
     """Сериализатор для профиля пользователя"""
+    payments_hystory = UserPaymentsHystorySerializer(source="payments", many=True, read_only=True)
 
     class Meta:
         model = User
-        fields = ["id", "email", "phone_number", "city", "avatar"]
+        fields = (
+            "id",
+            "email",
+            "phone_number",
+            "city",
+            "avatar",
+            "payments_hystory",
+        )
         read_only_fields = ["email"]  # email доступен только для чтения
 
 class PaymentsSerializer(ModelSerializer):
