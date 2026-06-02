@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
-from users.models import User
+from learnings.serializers import CourseSerializer, LessonSerializer
+from users.models import User, Payments
 
 
 class UserRegisterSerializer(ModelSerializer):
@@ -32,3 +33,22 @@ class UserProfileSerializer(ModelSerializer):
         model = User
         fields = ["id", "email", "phone_number", "city", "avatar"]
         read_only_fields = ["email"]  # email доступен только для чтения
+
+class PaymentsSerializer(ModelSerializer):
+    """Сериализатор для списка платежей"""
+
+    user = UserProfileSerializer(read_only=True)
+    paid_course = CourseSerializer(read_only=True)
+    paid_lesson = LessonSerializer(read_only=True)
+
+    class Meta:
+        model = Payments
+        fields = (
+            "id",
+            "user",
+            "payment_date",
+            "paid_course",
+            "paid_lesson",
+            "payment_amount",
+            "payment_type",
+        )
