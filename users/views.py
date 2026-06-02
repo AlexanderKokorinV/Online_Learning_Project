@@ -1,10 +1,9 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
-from rest_framework.generics import RetrieveUpdateAPIView, ListAPIView
+from rest_framework.generics import ListAPIView, RetrieveUpdateAPIView
 
-from users.models import User, Payments
-from users.serializers import UserProfileSerializer, PaymentsSerializer
-
+from users.models import Payments, User
+from users.serializers import PaymentsSerializer, UserProfileSerializer
 
 # Create your views here.
 

@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
 from learnings.serializers import CourseSerializer, LessonSerializer
-from users.models import User, Payments
+from users.models import Payments, User
 
 
 class UserRegisterSerializer(ModelSerializer):
@@ -25,8 +25,10 @@ class UserRegisterSerializer(ModelSerializer):
         )
         return user
 
+
 class UserPaymentsHystorySerializer(ModelSerializer):
     """Сериализатор для истории платежей пользователя"""
+
     paid_course = CourseSerializer(read_only=True)
     paid_lesson = LessonSerializer(read_only=True)
 
@@ -45,6 +47,7 @@ class UserPaymentsHystorySerializer(ModelSerializer):
 
 class UserProfileSerializer(ModelSerializer):
     """Сериализатор для профиля пользователя"""
+
     payments_hystory = UserPaymentsHystorySerializer(source="payments", many=True, read_only=True)
 
     class Meta:
@@ -58,6 +61,7 @@ class UserProfileSerializer(ModelSerializer):
             "payments_hystory",
         )
         read_only_fields = ["email"]  # email доступен только для чтения
+
 
 class PaymentsSerializer(ModelSerializer):
     """Сериализатор для списка платежей"""

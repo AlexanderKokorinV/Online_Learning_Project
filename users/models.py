@@ -38,6 +38,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
+
 class Payments(models.Model):
     """Модель платежей"""
 
@@ -73,10 +74,8 @@ class Payments(models.Model):
     )
 
     payment_amount = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        verbose_name="Сумма оплаты",
-        help_text="Сумма оплаты")
+        max_digits=10, decimal_places=2, verbose_name="Сумма оплаты", help_text="Сумма оплаты"
+    )
 
     payment_type = models.CharField(
         max_length=100,
@@ -86,8 +85,8 @@ class Payments(models.Model):
     )
 
     class Meta:
-        verbose_name="Платеж"
-        verbose_name_plural="Платежи"
+        verbose_name = "Платеж"
+        verbose_name_plural = "Платежи"
         ordering = ["-payment_date"]
 
     def __str__(self):

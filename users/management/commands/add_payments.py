@@ -9,6 +9,7 @@ from users.models import Payments
 
 User = get_user_model()
 
+
 class Command(BaseCommand):
 
     help = "Команда для добавления тестовых платежей в БД"
@@ -33,7 +34,7 @@ class Command(BaseCommand):
                 payment_date=timezone.now().date(),
                 paid_course=course,
                 payment_amount=decimal.Decimal("10000.00"),
-                payment_type="transfer"
+                payment_type="transfer",
             )
             self.stdout.write(self.style.SUCCESS(f"Создан платеж за курс: {course.title}"))
 
@@ -43,7 +44,7 @@ class Command(BaseCommand):
                 payment_date=timezone.now().date(),
                 paid_lesson=lesson,
                 payment_amount=decimal.Decimal("1000.00"),
-                payment_type="cash"
+                payment_type="cash",
             )
             self.stdout.write(self.style.SUCCESS(f"Создан платеж за урок: {lesson.title}"))
 
