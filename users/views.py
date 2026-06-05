@@ -4,10 +4,13 @@ from rest_framework.generics import ListAPIView, RetrieveUpdateAPIView, CreateAP
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 
 from users.models import Payments, User
+from users.permissions import IsOwnerOrStaff
 from users.serializers import PaymentsSerializer, UserProfileSerializer, UserRegisterSerializer
 
 
 # Create your views here.
+
+# -----CRUD пользователей-----
 
 class UserCreateAPIView(CreateAPIView):
     """Эндпоинт для регистрации пользователей (доступен всем)"""
@@ -25,15 +28,16 @@ class UserProfileUpdateView(RetrieveUpdateAPIView):
     """Эндпоинт для просмотра и редактирования профиля любого пользователя"""
     queryset = User.objects.prefetch_related("payments__paid_course", "payments__paid_lesson")
     serializer_class = UserProfileSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrStaff]
+    permission_classes = [IsAuthenticated, IsOwnerOrStaff] # Только владелец или модератор
 
 
 class UserDestroyAPIView(DestroyAPIView):
     """Эндпоинт для удаления пользователей (только для админов)"""
     queryset = User.objects.all()
     serializer_class = UserProfileSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser] #Только админ
 
+# -----Платежи-----
 
 class PaymentsListAPIView(ListAPIView):
     """Эндпоинт для списка платежей (только для авторизованных)"""
@@ -46,3 +50,4 @@ class PaymentsListAPIView(ListAPIView):
     filterset_fields = ["paid_course", "paid_lesson", "payment_type"]
     ordering_fields = ("payment_date",)
     permission_classes = [IsAuthenticated]
+
