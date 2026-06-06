@@ -8,10 +8,10 @@ from learnings.permissions import IsModerator
 from learnings.serializers import CourseSerializer, LessonSerializer
 from users.permissions import IsOwner
 
-
 # Create your views here.
 
 # ------Контроллеры курсов------
+
 
 class CourseViewSet(ModelViewSet):
     """CRUD для модели курсов"""
@@ -58,6 +58,7 @@ class CourseViewSet(ModelViewSet):
 
 # ------Контроллеры уроков------
 
+
 class LessonCreateAPIView(CreateAPIView):
     """Создание урока (POST). Недоступно модераторам"""
 
@@ -66,6 +67,7 @@ class LessonCreateAPIView(CreateAPIView):
     permission_classes = [IsAuthenticated, ~IsModerator]
 
     def perform_create(self, serializer):
+        """Автоматически назначает автора урока при создании"""
         serializer.save(user=self.request.user)
 
 
@@ -74,7 +76,6 @@ class LessonListAPIView(ListAPIView):
 
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated]
-
 
     def get_queryset(self):
         """Модераторы видят все уроки, пользователи - только свои"""

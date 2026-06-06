@@ -10,6 +10,7 @@ from users.models import Payments
 
 User = get_user_model()
 
+
 class UserRegisterSerializer(ModelSerializer):
     """Сериализатор для регистрации пользователя"""
 
@@ -19,18 +20,13 @@ class UserRegisterSerializer(ModelSerializer):
         model = User
         fields = ["id", "email", "password", "phone_number", "city", "avatar"]
         extra_kwargs = {
-            "email": {
-                "error_messages": {
-                    "unique": "Пользователь с таким Email уже зарегистрирован в системе."
-                }
-            }
+            "email": {"error_messages": {"unique": "Пользователь с таким Email уже зарегистрирован в системе."}}
         }
-
 
     def create(self, validated_data):
         """Метод создания с хешированием пароля перед сохранением в БД"""
 
-        assert isinstance(User.objects, CustomUserManager) # Техническая строка для линтера
+        assert isinstance(User.objects, CustomUserManager)  # Техническая строка для линтера
 
         try:
             user = User.objects.create_user(
@@ -43,12 +39,7 @@ class UserRegisterSerializer(ModelSerializer):
             return user
 
         except IntegrityError as e:
-            raise ValidationError(
-                {
-                    "error": f"Не удалось завершить регистрацию из-за системной ошибки: {str(e)}"
-                }
-            )
-
+            raise ValidationError({"error": f"Не удалось завершить регистрацию из-за системной ошибки: {str(e)}"})
 
 
 class UserPaymentsHystorySerializer(ModelSerializer):
@@ -107,15 +98,24 @@ class PaymentsSerializer(ModelSerializer):
             "payment_type",
         )
 
+
 class PaymentsCreateSerializer(ModelSerializer):
     """Сериализатор для создания платежей"""
+
     class Meta:
         model = Payments
         fields = "__all__"
+
 
 class UserPublicProfileSerializer(ModelSerializer):
     """Сериализатор для просмотра чужих профилей (только общая информация)"""
 
     class Meta:
         model = User
-        fields = ("id", "email", "phone_number", "city", "avatar",) # Оставляем только публичные поля
+        fields = (
+            "id",
+            "email",
+            "phone_number",
+            "city",
+            "avatar",
+        )  # Оставляем только публичные поля
