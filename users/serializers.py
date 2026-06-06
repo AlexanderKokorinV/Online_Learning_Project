@@ -1,29 +1,50 @@
+from django.contrib.auth import get_user_model
+from django.db import IntegrityError
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import ModelSerializer
 
 from learnings.serializers import CourseSerializer, LessonSerializer
 from users.models import Payments, User
 
+User = get_user_model()
 
 class UserRegisterSerializer(ModelSerializer):
     """Сериализатор для регистрации пользователя"""
 
-    password = serializers.CharField(write_only=True)  # пароль только для записи
+    password = serializers.CharField(write_only=True, min_length=8)  # пароль только для записи
 
     class Meta:
         model = User
         fields = ["id", "email", "password", "phone_number", "city", "avatar"]
+        extra_kwargs = {
+            "email": {
+                "error_messages": {
+                    "unique": "Пользователь с таким Email уже зарегистрирован в системе."
+                }
+            }
+        }
+
 
     def create(self, validated_data):
-        """Метод для хеширования пароля перед сохранением в БД"""
-        user = User.objects.create_user(
-            email=validated_data["email"],
-            password=validated_data["password"],
-            phone_number=validated_data["phone_number"],
-            city=validated_data["city"],
-            avatar=validated_data.get("avatar", None),
-        )
-        return user
+        """Метод создания с хешированием пароля перед сохранением в БД"""
+        try:
+            user = User.objects.create_user(
+                email=validated_data.get("email"),
+                password=validated_data.get("password"),
+                phone_number=validated_data.get("phone_number", None),
+                city=validated_data.get("city", None),
+                avatar=validated_data.get("avatar", None),
+            )
+            return user
+
+        except IntegrityError as e:
+            raise ValidationError(
+                {
+                    "error": f"Не удалось завершить регистрацию из-за системной ошибки: {str(e)}"
+                }
+            )
+
 
 
 class UserPaymentsHystorySerializer(ModelSerializer):
@@ -81,3 +102,9 @@ class PaymentsSerializer(ModelSerializer):
             "payment_amount",
             "payment_type",
         )
+
+class PaymentsCreateSerializer(ModelSerializer):
+    """Сериализатор для создания платежей"""
+    class Meta:
+        model = Payments
+        fields = "__all__"

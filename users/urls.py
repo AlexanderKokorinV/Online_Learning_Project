@@ -10,10 +10,10 @@ app_name = UsersConfig.name
 
 urlpatterns = [
     # Маршруты CRUD пользователей
-    path("users/create/", UserCreateAPIView.as_view(), name="user_create"),
-    path("users/", UserListAPIView.as_view(), name="user_list"),
-    path("users/profile/<int:pk>/", UserProfileUpdateView.as_view(), name="user_profile"),
-    path("users/delete/<int:pk>/", UserDestroyAPIView.as_view(), name="user_delete"),
+    path("create/", UserCreateAPIView.as_view(), name="user_create"),
+    path("", UserListAPIView.as_view(), name="user_list"),
+    path("profile/<int:pk>/", UserProfileUpdateView.as_view(), name="user_profile"),
+    path("delete/<int:pk>/", UserDestroyAPIView.as_view(), name="user_delete"),
 
     # Список платежей
     path("payments/", PaymentsListAPIView.as_view(), name="payments_list"),

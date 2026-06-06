@@ -1,5 +1,8 @@
 from django.db import models
 
+from config import settings
+
+
 # Create your models here.
 
 
@@ -15,6 +18,15 @@ class Course(models.Model):
         blank=True,
     )
     description = models.TextField(verbose_name="Описание", help_text="Добавьте описание курса", null=True, blank=True)
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="courses",
+        verbose_name="Владелец",
+    )
 
     class Meta:
         verbose_name = "Курс"

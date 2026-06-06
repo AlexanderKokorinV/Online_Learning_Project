@@ -1,11 +1,12 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
-from rest_framework.generics import ListAPIView, RetrieveUpdateAPIView, CreateAPIView, DestroyAPIView
+from rest_framework.generics import ListAPIView, RetrieveUpdateAPIView, CreateAPIView, DestroyAPIView, ListCreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 
 from users.models import Payments, User
 from users.permissions import IsOwnerOrStaff
-from users.serializers import PaymentsSerializer, UserProfileSerializer, UserRegisterSerializer
+from users.serializers import PaymentsSerializer, UserProfileSerializer, UserRegisterSerializer, \
+    PaymentsCreateSerializer
 
 
 # Create your views here.
@@ -39,7 +40,7 @@ class UserDestroyAPIView(DestroyAPIView):
 
 # -----Платежи-----
 
-class PaymentsListAPIView(ListAPIView):
+class PaymentsListAPIView(ListCreateAPIView):
     """Эндпоинт для списка платежей (только для авторизованных)"""
 
     queryset = Payments.objects.select_related("user", "paid_course", "paid_lesson")
@@ -51,3 +52,8 @@ class PaymentsListAPIView(ListAPIView):
     ordering_fields = ("payment_date",)
     permission_classes = [IsAuthenticated]
 
+    def get_serializer_class(self):
+        """Выбор сериализатора (для чтения или создания)"""
+        if self.request.method == "POST":
+            return PaymentsCreateSerializer
+        return PaymentsSerializer

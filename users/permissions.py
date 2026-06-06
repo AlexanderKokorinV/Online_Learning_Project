@@ -8,4 +8,4 @@ class IsOwnerOrStaff(BasePermission):
         if request.user.is_staff:
             return True
 
-        return request.user == obj.owner
+        return request.user == obj
