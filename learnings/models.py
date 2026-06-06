@@ -60,6 +60,15 @@ class Lesson(models.Model):
         blank=True,
     )
 
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="lessons",
+        verbose_name="Владелец",
+    )
+
     class Meta:
         verbose_name = "Урок"
         verbose_name_plural = "Уроки"

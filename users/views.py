@@ -1,13 +1,14 @@
+from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from rest_framework.generics import ListAPIView, RetrieveUpdateAPIView, CreateAPIView, DestroyAPIView, ListCreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 
+from learnings.permissions import IsModerator
 from users.models import Payments, User
-from users.permissions import IsOwnerOrStaff
+from users.permissions import IsOwner
 from users.serializers import PaymentsSerializer, UserProfileSerializer, UserRegisterSerializer, \
-    PaymentsCreateSerializer
-
+    PaymentsCreateSerializer, UserPublicProfileSerializer
 
 # Create your views here.
 
@@ -21,7 +22,7 @@ class UserCreateAPIView(CreateAPIView):
 
 class UserListAPIView(ListAPIView):
     """Эндпоинт для списка пользователей (доступен только авторизованным)"""
-    serializer_class = UserRegisterSerializer
+    serializer_class = UserProfileSerializer
     queryset = User.objects.prefetch_related("payments__paid_course", "payments__paid_lesson")
     permission_classes = [IsAuthenticated]
 
@@ -29,7 +30,26 @@ class UserProfileUpdateView(RetrieveUpdateAPIView):
     """Эндпоинт для просмотра и редактирования профиля любого пользователя"""
     queryset = User.objects.prefetch_related("payments__paid_course", "payments__paid_lesson")
     serializer_class = UserProfileSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrStaff] # Только владелец или модератор
+
+    def get_permissions(self):
+        """Просмотр (GET) - все авторизованные, PUT/PATCH - только владелец или модератор"""
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+
+        return [IsAuthenticated(), IsModerator | IsOwner]
+
+    def get_serializer_class(self):
+        """Если владелец - доступ ко всем данным, остальным - только общая инфо"""
+
+        # Получаем объект пользователя
+        obj = self.get_object()
+        current_user = self.request.user
+
+        if current_user == obj or current_user.is_staff or current_user.is_superuser or current_user.groups.filter(name="moderators").exists():
+            return UserProfileSerializer # Полный профиль
+
+        return UserPublicProfileSerializer # Только общая инфо
+
 
 
 class UserDestroyAPIView(DestroyAPIView):

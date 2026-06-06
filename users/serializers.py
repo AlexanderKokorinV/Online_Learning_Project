@@ -5,7 +5,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import ModelSerializer
 
 from learnings.serializers import CourseSerializer, LessonSerializer
-from users.models import Payments, User
+from users.managers import CustomUserManager
+from users.models import Payments
 
 User = get_user_model()
 
@@ -28,6 +29,9 @@ class UserRegisterSerializer(ModelSerializer):
 
     def create(self, validated_data):
         """Метод создания с хешированием пароля перед сохранением в БД"""
+
+        assert isinstance(User.objects, CustomUserManager) # Техническая строка для линтера
+
         try:
             user = User.objects.create_user(
                 email=validated_data.get("email"),
@@ -108,3 +112,10 @@ class PaymentsCreateSerializer(ModelSerializer):
     class Meta:
         model = Payments
         fields = "__all__"
+
+class UserPublicProfileSerializer(ModelSerializer):
+    """Сериализатор для просмотра чужих профилей (только общая информация)"""
+
+    class Meta:
+        model = User
+        fields = ("id", "email", "phone_number", "city", "avatar",) # Оставляем только публичные поля
