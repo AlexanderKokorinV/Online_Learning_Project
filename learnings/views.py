@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from learnings.models import Course, Lesson, Subscription
+from learnings.paginators import CoursePagination, LessonPagination
 from learnings.permissions import IsModerator
 from learnings.serializers import CourseSerializer, LessonSerializer, SubscriptionSerializer
 from users.permissions import IsOwner
@@ -21,6 +22,7 @@ class CourseViewSet(ModelViewSet):
     """CRUD для модели курсов"""
 
     serializer_class = CourseSerializer
+    pagination_class = CoursePagination
 
     def get_queryset(self):
         user = self.request.user
@@ -80,6 +82,7 @@ class LessonListAPIView(ListAPIView):
 
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = LessonPagination
 
     def get_queryset(self):
         """Модераторы видят все уроки, пользователи - только свои"""
