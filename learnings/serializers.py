@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, Serializer
 
-from learnings.models import Course, Lesson
+from learnings.models import Course, Lesson, Subscription
 from learnings.validators import YoutubeOnlyValidator
 
 
@@ -23,8 +23,21 @@ class CourseSerializer(ModelSerializer):
     lessons = LessonSerializer(many=True, read_only=True)
     lessons_count = serializers.SerializerMethodField()
 
+    is_subscribed = serializers.SerializerMethodField()
+
     def get_lessons_count(self, instance):
+        """Метод подсчитывает количество уроков в курсе"""
         return instance.lessons.all().count()
+
+    def get_is_subscribed(self, instance):
+        """Метод определяет, подписан ли текущий пользователь на данный курс"""
+
+        request = self.context.get("request")
+
+        if not request or not request.user or request.user.is_anonymous:
+            return False
+
+        return Subscription.objects.filter(user=request.user, course=instance).exists()
 
     class Meta:
         model = Course
@@ -33,9 +46,18 @@ class CourseSerializer(ModelSerializer):
             "title",
             "preview_image",
             "description",
+            "user",
             "lessons",
             "lessons_count",
+            "is_subscribed",
         )
+        read_only_fields = ("user",)
         validators = [
             YoutubeOnlyValidator(field="description")
         ]
+
+class SubscriptionSerializer(Serializer):
+    """Сериализатор для управления подпиской"""
+    class Meta:
+        model = Subscription
+        fields = ("course",)
