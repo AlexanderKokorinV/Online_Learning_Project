@@ -1,5 +1,5 @@
-from django.contrib.auth.models import Group
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.template.defaultfilters import title
 from django.urls import reverse
 from rest_framework import status
@@ -11,14 +11,15 @@ from learnings.models import Course, Lesson
 
 User = get_user_model()
 
+
 class LMSProjectTestCase(APITestCase):
     """Комплексный тестовый набор для проверки бизнес-логики LMS
-     Данный класс покрывает:
-        1. Полный CRUD-цикл для моделей Course и Lesson.
-        2. Разграничение прав доступа (владельцы, модераторы, анонимы).
-        3. Работу эндпоинта управления подписками.
-        4. Валидацию встроенных полей (включая фильтрацию сторонних ссылок через YoutubeOnlyValidator).
-        5. Корректность структуры ответа при включенной пагинации.
+    Данный класс покрывает:
+       1. Полный CRUD-цикл для моделей Course и Lesson.
+       2. Разграничение прав доступа (владельцы, модераторы, анонимы).
+       3. Работу эндпоинта управления подписками.
+       4. Валидацию встроенных полей (включая фильтрацию сторонних ссылок через YoutubeOnlyValidator).
+       5. Корректность структуры ответа при включенной пагинации.
     """
 
     def setUp(self):
@@ -58,7 +59,7 @@ class LMSProjectTestCase(APITestCase):
             user=self.user_owner,
         )
 
-#------------Тесты эндпоинтов курсов (CourseViewSet - router)------------
+    # ------------Тесты эндпоинтов курсов (CourseViewSet - router)------------
 
     def test_course_create_by_owner_success(self):
         """Тест создания курса обычным пользователем (POST /learnings/courses/)"""
@@ -70,26 +71,25 @@ class LMSProjectTestCase(APITestCase):
         }
         response = self.client.post(url, data=data)
 
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED) # Проверка возвращения статуса
-        self.assertEqual(Course.objects.filter(title=data["title"]).count(), 1) # В БД появилась ровно одна запись
-        self.assertEqual(Course.objects.get(title=data["title"]).user, self.user_owner) # Проверка автоматического назначения автора (perform_create)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)  # Проверка возвращения статуса
+        self.assertEqual(Course.objects.filter(title=data["title"]).count(), 1)  # В БД появилась ровно одна запись
+        self.assertEqual(
+            Course.objects.get(title=data["title"]).user, self.user_owner
+        )  # Проверка автоматического назначения автора (perform_create)
 
     def test_course_create_by_moderator_denied(self):
         """Тест запрета создания курса модератором (POST /learnings/courses/)"""
         self.client.force_authenticate(user=self.user_moderator)
         url = reverse("learnings:courses-list")
-        data = {
-            "title": "Курс модератора",
-            "description": "Тестовый курс модератора"
-        }
+        data = {"title": "Курс модератора", "description": "Тестовый курс модератора"}
         response = self.client.post(url, data=data)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN) # Проверка возвращения статуса "запрещено"
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)  # Проверка возвращения статуса "запрещено"
 
     def test_course_list_by_owner(self):
         """Владелец видит только свои курсы (GET /learnings/courses/)"""
         Course.objects.create(
-            title="Курс, созданный другим пользователем", # Создаем чужой курс для проверки изоляции
+            title="Курс, созданный другим пользователем",  # Создаем чужой курс для проверки изоляции
             user=self.user_other,
         )
 
@@ -114,8 +114,7 @@ class LMSProjectTestCase(APITestCase):
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 2) # Видит оба курса благодаря prefetch_related
-
+        self.assertEqual(response.data["count"], 2)  # Видит оба курса благодаря prefetch_related
 
     def test_course_retrieve_by_owner_and_moderator(self):
         """Чтение деталей курса - разрешено владельцу и модератору (GET /learnings/courses/<pk>/)"""
@@ -158,7 +157,6 @@ class LMSProjectTestCase(APITestCase):
         self.course.refresh_from_db()
         self.assertNotEqual(bad_data["title"], self.course.title)
 
-
     def test_course_delete_by_moderator_denied(self):
         """Запрет удаления курса модератором (DELETE /learnings/courses/<pk>/)"""
         self.client.force_authenticate(user=self.user_moderator)
@@ -177,7 +175,7 @@ class LMSProjectTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Course.objects.count(), 0)
 
-#------------Тесты эндпоинтов уроков (Generic APIViews - path)------------
+    # ------------Тесты эндпоинтов уроков (Generic APIViews - path)------------
 
     def test_lesson_create_by_owner_success(self):
         """Создание урока владельцем (POST /learnings/lessons/create/)"""
@@ -219,15 +217,11 @@ class LMSProjectTestCase(APITestCase):
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 1) # Пользователь видит только свой урок
+        self.assertEqual(len(response.data["results"]), 1)  # Пользователь видит только свой урок
 
     def test_lesson_list_by_moderator(self):
         """Просмотр списка уроков модератором (GET /learnings/lessons/)"""
-        Lesson.objects.create(
-            course=self.course,
-            title="Чужой урок",
-            user=self.user_other
-        )
+        Lesson.objects.create(course=self.course, title="Чужой урок", user=self.user_other)
 
         self.client.force_authenticate(user=self.user_moderator)
         url = reverse("learnings:lessons")
@@ -271,11 +265,3 @@ class LMSProjectTestCase(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Lesson.objects.count(), 0)
-
-
-
-
-
-
-
-

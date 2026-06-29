@@ -1,7 +1,13 @@
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.generics import CreateAPIView, DestroyAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView, \
-    get_object_or_404
+from rest_framework.generics import (
+    CreateAPIView,
+    DestroyAPIView,
+    ListAPIView,
+    RetrieveAPIView,
+    UpdateAPIView,
+    get_object_or_404,
+)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -123,6 +129,7 @@ class LessonDestroyAPIView(DestroyAPIView):
 
 class SubscriptionAPIView(APIView):
     """Эндпоинт для управления подпиской пользователя на курс"""
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -131,12 +138,14 @@ class SubscriptionAPIView(APIView):
         serializer = SubscriptionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user = request.user # получаем пользователя
-        course_id = request.data.get("course") # получаем id курса
+        user = request.user  # получаем пользователя
+        course_id = request.data.get("course")  # получаем id курса
 
-        course_item = get_object_or_404(Course, pk=course_id) # получаем объект курса из базы
+        course_item = get_object_or_404(Course, pk=course_id)  # получаем объект курса из базы
 
-        subs_item = Subscription.objects.filter(user=user, course=course_item) # получаем объекты подписок по текущему пользователю и курсу
+        subs_item = Subscription.objects.filter(
+            user=user, course=course_item
+        )  # получаем объекты подписок по текущему пользователю и курсу
 
         # Если подписка у пользователя на этот курс есть - удаляем ее
         if subs_item.exists():
@@ -152,5 +161,3 @@ class SubscriptionAPIView(APIView):
 
         # Возвращаем ответ в API
         return Response({"message": message, "status_code": status_code})
-
-

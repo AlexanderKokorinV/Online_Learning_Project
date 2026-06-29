@@ -12,13 +12,13 @@ class YoutubeOnlyValidator:
 
     def __call__(self, value):
 
-        link_to_check = value.get(self.field) # Получаем значение проверяемого поля из словаря данных
+        link_to_check = value.get(self.field)  # Получаем значение проверяемого поля из словаря данных
 
-        if not link_to_check: # Если поле пустое, пропускаем проверку
+        if not link_to_check:  # Если поле пустое, пропускаем проверку
             return
 
         url_pattern = re.compile(
-            r"https?://[^\s/$.?#].[^\s]*", # Регулярное выражение для поиска любых URL-ссылок в тексте
+            r"https?://[^\s/$.?#].[^\s]*",  # Регулярное выражение для поиска любых URL-ссылок в тексте
             re.IGNORECASE,
         )
 
@@ -35,10 +35,3 @@ class YoutubeOnlyValidator:
                 raise serializers.ValidationError(
                     {self.field: "Запрещено использовать ссылки на сторонние ресурсы, кроме youtube.com."}
                 )
-
-
-
-
-
-
-

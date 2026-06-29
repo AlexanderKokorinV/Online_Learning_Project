@@ -8,7 +8,8 @@ from learnings.views import (
     LessonDestroyAPIView,
     LessonListAPIView,
     LessonRetrieveAPIView,
-    LessonUpdateAPIView, SubscriptionAPIView,
+    LessonUpdateAPIView,
+    SubscriptionAPIView,
 )
 
 app_name = LearningsConfig.name

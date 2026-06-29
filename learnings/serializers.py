@@ -11,10 +11,7 @@ class LessonSerializer(ModelSerializer):
     class Meta:
         model = Lesson
         fields = "__all__"
-        validators = [
-            YoutubeOnlyValidator(field="link_to_video"),
-            YoutubeOnlyValidator(field="description")
-        ]
+        validators = [YoutubeOnlyValidator(field="link_to_video"), YoutubeOnlyValidator(field="description")]
 
 
 class CourseSerializer(ModelSerializer):
@@ -52,12 +49,12 @@ class CourseSerializer(ModelSerializer):
             "is_subscribed",
         )
         read_only_fields = ("user",)
-        validators = [
-            YoutubeOnlyValidator(field="description")
-        ]
+        validators = [YoutubeOnlyValidator(field="description")]
+
 
 class SubscriptionSerializer(Serializer):
     """Сериализатор для управления подпиской"""
+
     class Meta:
         model = Subscription
         fields = ("course",)
