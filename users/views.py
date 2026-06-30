@@ -1,4 +1,6 @@
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import status
 from rest_framework.filters import OrderingFilter
 from rest_framework.generics import (
     CreateAPIView,
@@ -8,9 +10,8 @@ from rest_framework.generics import (
     RetrieveUpdateAPIView,
 )
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.views import APIView
 
 from learnings.permissions import IsModerator
 from users.models import Payments, User
@@ -20,10 +21,9 @@ from users.serializers import (
     PaymentsSerializer,
     UserProfileSerializer,
     UserPublicProfileSerializer,
-    UserRegisterSerializer, StripePaymentSerializer,
+    UserRegisterSerializer,
 )
-from users.services import create_stripe_price, create_stripe_product, retrieve_stripe_session
-from django.shortcuts import get_object_or_404
+from users.services import create_stripe_price, create_stripe_product, create_stripe_session, retrieve_stripe_session
 
 # Create your views here.
 
@@ -109,6 +109,7 @@ class UserDestroyAPIView(DestroyAPIView):
 
 # -----Платежи-----
 
+
 class PaymentsListCreateAPIView(ListCreateAPIView):
     """Эндпоинт для следующих запросов:
     GET - Просмотр списка платежей текущего пользователя с фильтрацией.
@@ -139,7 +140,7 @@ class PaymentsListCreateAPIView(ListCreateAPIView):
         # Запросы к Stripe через сервисный модуль (services.py)
         product_data = create_stripe_product(course.title)
         price_data = create_stripe_price(product_data["id"], amount)
-        session_data = create_stripe_session(product_data["id"])
+        session_data = create_stripe_session(price_data["id"])
 
         # Сохранение всех данных в модель Payments
         serializer.save(
@@ -148,11 +149,13 @@ class PaymentsListCreateAPIView(ListCreateAPIView):
             payment_type="stripe",
             payment_link=session_data["url"],
             session_id=session_data["id"],
-            status=session_data["status"]
+            status=session_data["status"],
         )
+
 
 class PaymentStatusAPIView(APIView):
     """Контроллер для проверки актуального статуса платежа в Stripe по его ID"""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
@@ -169,11 +172,13 @@ class PaymentStatusAPIView(APIView):
         payment.status = stripe_data["status"]
         payment.save()
 
-        return Response({
-            "payment_id": payment.id,
-            "course": payment.paid_course.title if payment.paid_course else "Урок",
-            "amount": payment.payment_amount,
-            "stripe_status": stripe_data["status"], # "open", "complete", "expired"
-            "payment_status": stripe_data["payment_status"] # "paid" или "unpaid"
-        }, status=status.HTTP_200_OK)
-
+        return Response(
+            {
+                "payment_id": payment.id,
+                "course": payment.paid_course.title if payment.paid_course else "Урок",
+                "amount": payment.payment_amount,
+                "stripe_status": stripe_data["status"],  # "open", "complete", "expired"
+                "payment_status": stripe_data["payment_status"],  # "paid" или "unpaid"
+            },
+            status=status.HTTP_200_OK,
+        )

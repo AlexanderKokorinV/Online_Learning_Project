@@ -98,13 +98,13 @@ class Payments(models.Model):
         blank=True,
         null=True,
     )
-    session_id=models.CharField(
+    session_id = models.CharField(
         max_length=255,
         verbose_name="ID сессии Stripe",
         blank=True,
         null=True,
     )
-    status=models.CharField(
+    status = models.CharField(
         max_length=50,
         choices=STATUS_CHOICES,
         default="open",
@@ -122,6 +122,7 @@ class Payments(models.Model):
 
     def __str__(self):
         user_email = self.user.email if self.user else "Пользователь не существует"
-        item_title = self.paid_course.title if self.paid_course else (self.paid_lesson.title if self.paid_lesson else "Урок")
+        item_title = (
+            self.paid_course.title if self.paid_course else (self.paid_lesson.title if self.paid_lesson else "Урок")
+        )
         return f"Платеж от {user_email} за {item_title} на сумму {self.payment_amount}."
-

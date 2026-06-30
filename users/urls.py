@@ -3,10 +3,12 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from users.apps import UsersConfig
 from users.views import (
+    PaymentsListCreateAPIView,
+    PaymentStatusAPIView,
     UserCreateAPIView,
     UserDestroyAPIView,
     UserListAPIView,
-    UserProfileUpdateView, PaymentsListCreateAPIView, PaymentStatusAPIView,
+    UserProfileUpdateView,
 )
 
 app_name = UsersConfig.name

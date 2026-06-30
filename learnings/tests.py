@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.template.defaultfilters import title
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase

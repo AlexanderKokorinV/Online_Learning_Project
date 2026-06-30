@@ -1,14 +1,7 @@
-from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
-from rest_framework import status, serializers
-from rest_framework.exceptions import PermissionDenied
-from rest_framework.generics import (
-    CreateAPIView,
-    DestroyAPIView,
-    ListAPIView,
-    RetrieveAPIView,
-    UpdateAPIView,
-    get_object_or_404,
-)
+from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework import status
+from rest_framework.generics import (CreateAPIView, DestroyAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView,
+                                     get_object_or_404)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -16,9 +9,9 @@ from rest_framework.viewsets import ModelViewSet
 
 from learnings.models import Course, Lesson, Subscription
 from learnings.paginators import CoursePagination, LessonPagination
-from learnings.permissions import IsModerator, IsNotModerator, IsOwnerOrModerator
-from learnings.serializers import CourseSerializer, LessonSerializer, SubscriptionSerializer, \
-    SubscriptionMessageSerializer
+from learnings.permissions import IsNotModerator, IsOwnerOrModerator
+from learnings.serializers import (CourseSerializer, LessonSerializer, SubscriptionMessageSerializer,
+                                   SubscriptionSerializer)
 from users.permissions import IsOwner
 
 # Create your views here.
@@ -45,22 +38,21 @@ class CourseViewSet(ModelViewSet):
         # Создание курса (POST)
         if self.action == "create":
             # Авторизован и не модератор
-            return [IsAuthenticated, IsNotModerator]
+            return [IsAuthenticated(), IsNotModerator()]
 
         # Просмотр списка курсов (GET)
         if self.action == "list":
-            return [IsAuthenticated]
+            return [IsAuthenticated()]
 
         # Удаление курса (DELETE)
         if self.action == "destroy":
             # Удалять может только владелец
-            return [IsAuthenticated, IsOwner]
-
+            return [IsAuthenticated(), IsOwner()]
 
         if self.action in ["update", "partial_update", "retrieve"]:
-            return [IsAuthenticated, IsOwnerOrModerator]
+            return [IsAuthenticated(), IsOwnerOrModerator()]
 
-        return [IsAuthenticated]
+        return [IsAuthenticated()]
 
     def perform_create(self, serializer):
         """Автоматически назначает автора курса при создании"""
@@ -125,6 +117,7 @@ class LessonDestroyAPIView(DestroyAPIView):
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsOwner]
 
+
 class SubscriptionAPIView(APIView):
     """Эндпоинт для управления подпиской пользователя на курс"""
 
@@ -132,19 +125,17 @@ class SubscriptionAPIView(APIView):
 
     @extend_schema(
         summary="Управление подпиской на курс",
-        description=(
-                "Позволяет авторизованному пользователю подписаться или отписаться от обновлений курса."
-        ),
+        description=("Позволяет авторизованному пользователю подписаться или отписаться от обновлений курса."),
         request=SubscriptionSerializer,  # Передаем сериализатор для валидации тела запроса (RequestBody)
         responses={
             200: OpenApiResponse(
                 description="Успешное изменение статуса подписки (создание или удаление).",
-                response=SubscriptionMessageSerializer
+                response=SubscriptionMessageSerializer,
             ),
             400: OpenApiResponse(description="Невалидные входящие данные."),
             401: OpenApiResponse(description="Пользователь не авторизован."),
-            404: OpenApiResponse(description="Указанный курс не найден в базе данных.")
-        }
+            404: OpenApiResponse(description="Указанный курс не найден в базе данных."),
+        },
     )
     def post(self, request):
 
