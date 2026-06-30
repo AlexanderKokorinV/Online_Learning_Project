@@ -58,3 +58,8 @@ class SubscriptionSerializer(Serializer):
     class Meta:
         model = Subscription
         fields = ("course",)
+
+class SubscriptionMessageSerializer(Serializer):
+    """Вспомогательный сериализатор для корректного отображения
+    JSON-ответа подписки в Swagger"""
+    message = serializers.CharField(default="Подписка добавлена")

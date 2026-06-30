@@ -1,4 +1,5 @@
-from rest_framework import status
+from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
+from rest_framework import status, serializers
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import (
     CreateAPIView,
@@ -15,8 +16,9 @@ from rest_framework.viewsets import ModelViewSet
 
 from learnings.models import Course, Lesson, Subscription
 from learnings.paginators import CoursePagination, LessonPagination
-from learnings.permissions import IsModerator
-from learnings.serializers import CourseSerializer, LessonSerializer, SubscriptionSerializer
+from learnings.permissions import IsModerator, IsNotModerator, IsOwnerOrModerator
+from learnings.serializers import CourseSerializer, LessonSerializer, SubscriptionSerializer, \
+    SubscriptionMessageSerializer
 from users.permissions import IsOwner
 
 # Create your views here.
@@ -40,28 +42,25 @@ class CourseViewSet(ModelViewSet):
 
     def get_permissions(self):
 
-        user = self.request.user
-
         # Создание курса (POST)
         if self.action == "create":
             # Авторизован и не модератор
-            if user.is_authenticated and user.groups.filter(name="moderators").exists():
-                raise PermissionDenied("Модераторам запрещено создавать новые курсы.")
-            return [IsAuthenticated()]
+            return [IsAuthenticated, IsNotModerator]
 
         # Просмотр списка курсов (GET)
         if self.action == "list":
-            return [IsAuthenticated()]
+            return [IsAuthenticated]
 
         # Удаление курса (DELETE)
         if self.action == "destroy":
             # Удалять может только владелец
-            if user.is_authenticated and user.groups.filter(name="moderators").exists():
-                raise PermissionDenied("Модераторам запрещено удалять курсы.")
-            return [IsAuthenticated()]
+            return [IsAuthenticated, IsOwner]
 
-        # По умолчанию (включает retrieve, update, partial_update)
-        return [IsAuthenticated()]
+
+        if self.action in ["update", "partial_update", "retrieve"]:
+            return [IsAuthenticated, IsOwnerOrModerator]
+
+        return [IsAuthenticated]
 
     def perform_create(self, serializer):
         """Автоматически назначает автора курса при создании"""
@@ -76,7 +75,7 @@ class LessonCreateAPIView(CreateAPIView):
 
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [IsAuthenticated, ~IsModerator]
+    permission_classes = [IsAuthenticated, IsNotModerator]
 
     def perform_create(self, serializer):
         """Автоматически назначает автора урока при создании"""
@@ -108,7 +107,7 @@ class LessonRetrieveAPIView(RetrieveAPIView):
 
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [IsAuthenticated, IsModerator | IsOwner]
+    permission_classes = [IsAuthenticated, IsOwnerOrModerator]
 
 
 class LessonUpdateAPIView(UpdateAPIView):
@@ -116,7 +115,7 @@ class LessonUpdateAPIView(UpdateAPIView):
 
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [IsAuthenticated, IsModerator | IsOwner]
+    permission_classes = [IsAuthenticated, IsOwnerOrModerator]
 
 
 class LessonDestroyAPIView(DestroyAPIView):
@@ -126,12 +125,27 @@ class LessonDestroyAPIView(DestroyAPIView):
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsOwner]
 
-
 class SubscriptionAPIView(APIView):
     """Эндпоинт для управления подпиской пользователя на курс"""
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Управление подпиской на курс",
+        description=(
+                "Позволяет авторизованному пользователю подписаться или отписаться от обновлений курса."
+        ),
+        request=SubscriptionSerializer,  # Передаем сериализатор для валидации тела запроса (RequestBody)
+        responses={
+            200: OpenApiResponse(
+                description="Успешное изменение статуса подписки (создание или удаление).",
+                response=SubscriptionMessageSerializer
+            ),
+            400: OpenApiResponse(description="Невалидные входящие данные."),
+            401: OpenApiResponse(description="Пользователь не авторизован."),
+            404: OpenApiResponse(description="Указанный курс не найден в базе данных.")
+        }
+    )
     def post(self, request):
 
         # Валидируем входящие данные через сериализатор
@@ -160,4 +174,4 @@ class SubscriptionAPIView(APIView):
             status_code = status.HTTP_201_CREATED
 
         # Возвращаем ответ в API
-        return Response({"message": message, "status_code": status_code})
+        return Response({"message": message}, status=status_code)
