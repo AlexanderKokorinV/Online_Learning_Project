@@ -8,6 +8,9 @@ from rest_framework.generics import (
     RetrieveUpdateAPIView,
 )
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
 
 from learnings.permissions import IsModerator
 from users.models import Payments, User
@@ -17,8 +20,10 @@ from users.serializers import (
     PaymentsSerializer,
     UserProfileSerializer,
     UserPublicProfileSerializer,
-    UserRegisterSerializer,
+    UserRegisterSerializer, StripePaymentSerializer,
 )
+from users.services import create_stripe_price, create_stripe_product, retrieve_stripe_session
+from django.shortcuts import get_object_or_404
 
 # Create your views here.
 
@@ -104,17 +109,19 @@ class UserDestroyAPIView(DestroyAPIView):
 
 # -----Платежи-----
 
-
-class PaymentsListAPIView(ListCreateAPIView):
-    """Эндпоинт для списка платежей (только для авторизованных)"""
+class PaymentsListCreateAPIView(ListCreateAPIView):
+    """Эндпоинт для следующих запросов:
+    GET - Просмотр списка платежей текущего пользователя с фильтрацией.
+    POST - Инициализация покупки курса и генерация платежной ссылки Stripe.
+    """
 
     queryset = Payments.objects.select_related("user", "paid_course", "paid_lesson")
-    serializer_class = PaymentsSerializer
 
     filter_backends = (DjangoFilterBackend, OrderingFilter)
 
     filterset_fields = ["paid_course", "paid_lesson", "payment_type"]
-    ordering_fields = ("payment_date",)
+    ordering_fields = ("created_at",)
+
     permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
@@ -122,3 +129,51 @@ class PaymentsListAPIView(ListCreateAPIView):
         if self.request.method == "POST":
             return PaymentsCreateSerializer
         return PaymentsSerializer
+
+    def perform_create(self, serializer):
+        """Метод для создания платежа и интеграции со Stripe при POST-запросе"""
+        course = serializer.validated_data.get("paid_course")
+
+        amount = getattr(course, "price", 5000)
+
+        # Запросы к Stripe через сервисный модуль (services.py)
+        product_data = create_stripe_product(course.title)
+        price_data = create_stripe_price(product_data["id"], amount)
+        session_data = create_stripe_session(product_data["id"])
+
+        # Сохранение всех данных в модель Payments
+        serializer.save(
+            user=self.request.user,
+            payment_amount=amount,
+            payment_type="stripe",
+            payment_link=session_data["url"],
+            session_id=session_data["id"],
+            status=session_data["status"]
+        )
+
+class PaymentStatusAPIView(APIView):
+    """Контроллер для проверки актуального статуса платежа в Stripe по его ID"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        # Платеж текущего пользователя по ID
+        payment = get_object_or_404(Payments, pk=pk, user=request.user)
+
+        if not payment.session_id:
+            return Response({"error": "Этот платеж не связан со Stripe"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Запрашиваем актуальный статус у Stripe API (services.py)
+        stripe_data = retrieve_stripe_session(payment.session_id)
+
+        # Обновляем статус в БД
+        payment.status = stripe_data["status"]
+        payment.save()
+
+        return Response({
+            "payment_id": payment.id,
+            "course": payment.paid_course.title if payment.paid_course else "Урок",
+            "amount": payment.payment_amount,
+            "stripe_status": stripe_data["status"], # "open", "complete", "expired"
+            "payment_status": stripe_data["payment_status"] # "paid" или "unpaid"
+        }, status=status.HTTP_200_OK)
+

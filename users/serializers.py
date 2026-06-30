@@ -78,9 +78,15 @@ class UserProfileSerializer(ModelSerializer):
         )
         read_only_fields = ["email"]  # email доступен только для чтения
 
+class StripePaymentSerializer(ModelSerializer):
+    """Сериализатор для создания платежа через Stripe"""
+    class Meta:
+        model = Payments
+        fields = ("id", "paid_course", "payment_amount", "payment_type", "payment_link", "session_id", "status", "created_at")
+        read_only_fields = ("payment_amount", "payment_type", "payment_link", "session_id", "status")
 
 class PaymentsSerializer(ModelSerializer):
-    """Сериализатор для списка платежей"""
+    """Сериализатор для отображения списка платежей (Read-Only)"""
 
     user = UserProfileSerializer(read_only=True)
     paid_course = CourseSerializer(read_only=True)
@@ -91,20 +97,39 @@ class PaymentsSerializer(ModelSerializer):
         fields = (
             "id",
             "user",
-            "payment_date",
+            "created_at",
             "paid_course",
             "paid_lesson",
             "payment_amount",
             "payment_type",
+            "payment_link",
+            "status",
         )
 
 
 class PaymentsCreateSerializer(ModelSerializer):
-    """Сериализатор для создания платежей"""
+    """Сериализатор для создания платежей через Stripe (Write-Only)"""
 
     class Meta:
         model = Payments
-        fields = "__all__"
+        fields = (
+            "id",
+            "paid_course",
+            "payment_amount",
+            "payment_type",
+            "payment_link",
+            "status",
+            "created_at",
+        )
+
+        # Все расчетные поля защищены от ручного ввода пользователя
+        read_only_fields = (
+            "payment_amount",
+            "payment_type",
+            "payment_link",
+            "status",
+            "created_at",
+        )
 
 
 class UserPublicProfileSerializer(ModelSerializer):

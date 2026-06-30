@@ -17,6 +17,7 @@ class Course(models.Model):
         blank=True,
     )
     description = models.TextField(verbose_name="Описание", help_text="Добавьте описание курса", null=True, blank=True)
+    price = models.PositiveIntegerField(default=5000, verbose_name="Цена курса")
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -30,7 +31,6 @@ class Course(models.Model):
     class Meta:
         verbose_name = "Курс"
         verbose_name_plural = "Курсы"
-        ordering = ["title"]
 
     def __str__(self):
         return self.title

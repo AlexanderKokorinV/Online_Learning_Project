@@ -48,15 +48,20 @@ class Payments(models.Model):
         ("stripe", "Оплата через Stripe"),
     ]
 
+    STATUS_CHOICES = [
+        ("open", "В процессе"),
+        ("complete", "Оплачен"),
+        ("expired", "Просрочен/Отменен"),
+    ]
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="payments",
         verbose_name="Пользователь",
     )
-
-    payment_date = models.DateField(auto_now_add=True, verbose_name="Дата оплаты")
-
     paid_course = models.ForeignKey(
         Course,
         blank=True,
@@ -73,18 +78,20 @@ class Payments(models.Model):
         related_name="payments",
         verbose_name="Оплаченный урок",
     )
-
     payment_amount = models.DecimalField(
-        max_digits=10, decimal_places=2, verbose_name="Сумма оплаты", help_text="Сумма оплаты"
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Сумма оплаты",
+        help_text="Сумма оплаты",
     )
-
     payment_type = models.CharField(
         max_length=100,
         choices=PAYMENT_METHODS,
         verbose_name="Способ оплаты",
-        help_text="Способ оплаты: наличные или перевод на счет.",
+        help_text="Способ оплаты: наличные, перевод на счет или онлайн через Stripe.",
     )
 
+    # Поля интеграции с платежным сервисом Stripe
     payment_link = models.URLField(
         max_length=500,
         verbose_name="Ссылка на оплату Stripe",
@@ -97,11 +104,24 @@ class Payments(models.Model):
         blank=True,
         null=True,
     )
+    status=models.CharField(
+        max_length=50,
+        choices=STATUS_CHOICES,
+        default="open",
+        verbose_name="Статус платежа",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата и время оплаты",
+    )
 
     class Meta:
         verbose_name = "Платеж"
         verbose_name_plural = "Платежи"
-        ordering = ["-payment_date"]
+        ordering = ["-created_at"]
 
     def __str__(self):
-        return f"Платеж от {self.user.email} на сумму {self.payment_amount}"
+        user_email = self.user.email if self.user else "Пользователь не существует"
+        item_title = self.paid_course.title if self.paid_course else (self.paid_lesson.title if self.paid_lesson else "Урок")
+        return f"Платеж от {user_email} за {item_title} на сумму {self.payment_amount}."
+
