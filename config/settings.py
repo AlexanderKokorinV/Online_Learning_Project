@@ -178,6 +178,13 @@ CELERY_ENABLE_UTC = False
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
 
+CELERY_BEAT_SCHEDULE = {
+    'check_inactive_users_every_30_seconds': {
+        'task': 'learnings.tasks.check_inactive_users_periodic',
+        'schedule': 30.0,  # Интервал в секундах
+    },
+}
+
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",

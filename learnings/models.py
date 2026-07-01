@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 from config import settings
 
@@ -18,6 +19,7 @@ class Course(models.Model):
     )
     description = models.TextField(verbose_name="Описание", help_text="Добавьте описание курса", null=True, blank=True)
     price = models.PositiveIntegerField(default=5000, verbose_name="Цена курса")
+    updated_at = models.DateTimeField(default=timezone.now, verbose_name="Дата последнего обновления")
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
