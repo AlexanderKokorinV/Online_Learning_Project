@@ -3,19 +3,29 @@ from datetime import timedelta
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.generics import (CreateAPIView, DestroyAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView,
-                                     get_object_or_404)
+from rest_framework.generics import (
+    CreateAPIView,
+    DestroyAPIView,
+    ListAPIView,
+    RetrieveAPIView,
+    UpdateAPIView,
+    get_object_or_404,
+)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from learnings.models import Course, Lesson, Subscription
-from learnings.tasks import send_course_update_emails
 from learnings.paginators import CoursePagination, LessonPagination
 from learnings.permissions import IsNotModerator, IsOwnerOrModerator
-from learnings.serializers import (CourseSerializer, LessonSerializer, SubscriptionMessageSerializer,
-                                   SubscriptionSerializer)
+from learnings.serializers import (
+    CourseSerializer,
+    LessonSerializer,
+    SubscriptionMessageSerializer,
+    SubscriptionSerializer,
+)
+from learnings.tasks import send_course_update_emails
 from users.permissions import IsOwner
 
 # Create your views here.
@@ -64,8 +74,8 @@ class CourseViewSet(ModelViewSet):
 
     def perform_update(self, serializer):
         """Переопределение метода perform_update для проверки условий запуска рассылки"""
-        course = serializer.save() # Сохраняем внесенные изменения в курс
-        trigger_course_update_notification(course) # Запускаем проверку и фоновую таску рассылки
+        course = serializer.save()  # Сохраняем внесенные изменения в курс
+        trigger_course_update_notification(course)  # Запускаем проверку и фоновую таску рассылки
 
 
 # ------Контроллеры уроков------
@@ -121,8 +131,8 @@ class LessonUpdateAPIView(UpdateAPIView):
     def perform_update(self, serializer):
         """Переопределение метода perform_update для проверки условий запуска рассылки"""
         lesson = serializer.save()  # Сохраняем изменения в уроке
-        course = lesson.course # Берем объект связанного курса
-        trigger_course_update_notification(course) # Вызываем триггер рассылки для этого курса
+        course = lesson.course  # Берем объект связанного курса
+        trigger_course_update_notification(course)  # Вызываем триггер рассылки для этого курса
 
 
 class LessonDestroyAPIView(DestroyAPIView):
@@ -185,6 +195,7 @@ class SubscriptionAPIView(APIView):
 
 # ------Логика проверки времени------
 
+
 def trigger_course_update_notification(course):
     """
     Вспомогательная функция проверки интервала времени.
@@ -197,7 +208,7 @@ def trigger_course_update_notification(course):
     if not course.updated_at or (now - course.updated_at) > timedelta(hours=4):
         # Обновляем метку времени в БД
         course.updated_at = now
-        course.save(update_fields=['updated_at'])
+        course.save(update_fields=["updated_at"])
 
         # Запускаем Celery воркер через метод .delay()
         send_course_update_emails.delay(course.id)
