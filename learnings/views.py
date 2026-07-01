@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from django.utils import timezone
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.generics import (CreateAPIView, DestroyAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView,
@@ -8,6 +11,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from learnings.models import Course, Lesson, Subscription
+from learnings.tasks import send_course_update_emails
 from learnings.paginators import CoursePagination, LessonPagination
 from learnings.permissions import IsNotModerator, IsOwnerOrModerator
 from learnings.serializers import (CourseSerializer, LessonSerializer, SubscriptionMessageSerializer,
@@ -57,6 +61,11 @@ class CourseViewSet(ModelViewSet):
     def perform_create(self, serializer):
         """Автоматически назначает автора курса при создании"""
         serializer.save(user=self.request.user)
+
+    def perform_update(self, serializer):
+        """Переопределение метода perform_update для проверки условий запуска рассылки"""
+        course = serializer.save() # Сохраняем внесенные изменения в курс
+        trigger_course_update_notification(course) # Запускаем проверку и фоновую таску рассылки
 
 
 # ------Контроллеры уроков------
@@ -108,6 +117,12 @@ class LessonUpdateAPIView(UpdateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrModerator]
+
+    def perform_update(self, serializer):
+        """Переопределение метода perform_update для проверки условий запуска рассылки"""
+        lesson = serializer.save()  # Сохраняем изменения в уроке
+        course = lesson.course # Берем объект связанного курса
+        trigger_course_update_notification(course) # Вызываем триггер рассылки для этого курса
 
 
 class LessonDestroyAPIView(DestroyAPIView):
@@ -166,3 +181,26 @@ class SubscriptionAPIView(APIView):
 
         # Возвращаем ответ в API
         return Response({"message": message}, status=status_code)
+
+
+# ------Логика проверки времени------
+
+def trigger_course_update_notification(course):
+    """
+    Вспомогательная функция проверки интервала времени.
+    Вызывает Celery-задачу только если с момента последнего уведомления прошло более 4 часов.
+    """
+
+    now = timezone.now()
+
+    # Если поле пустое (или это первое обновление) или с прошлого обновления прошло > 4 часов
+    if not course.updated_at or (now - course.updated_at) > timedelta(hours=4):
+        # Обновляем метку времени в БД
+        course.updated_at = now
+        course.save(update_fields=['updated_at'])
+
+        # Запускаем Celery воркер через метод .delay()
+        send_course_update_emails.delay(course.id)
+        print(f"Задача рассылки для курса {course.id} успешно добавлена в очередь Celery.")
+    else:
+        print(f"Рассылка отменена: курс {course.id} обновлялся менее 4 часов назад.")
