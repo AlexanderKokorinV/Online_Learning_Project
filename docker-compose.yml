@@ -1,0 +1,97 @@
+version: "3.8"
+
+services:
+  # 1. Сервис базы данных PostgreSQL
+  db:
+    image: postgres:16-alpine
+    container_name: django_postgres
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    expose: # порт скрыт внутри сети Docker, внешнего подключения нет
+      - "5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Сервис кэша и брокера сообщений Redis
+  redis:
+    image: redis:7-alpine
+    container_name: django_redis
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    expose: # порт скрыт внутри сети Docker, внешнего подключения нет
+      - "6379"
+
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # 3. Асинхронный воркер Celery для фоновых задач
+  celery:
+    build: .
+    container_name: django_celery
+    restart: always
+    command: poetry run celery -A config worker --loglevel=info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # 4. Планировщик периодических задач Celery Beat
+  celery-beat:
+    build: .
+    container_name: django_celery_beat
+    restart: always
+    command: poetry run celery -A config beat --loglevel=info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+
+  # 5. Основное веб-приложение Django (DRF)
+  web:
+    build: .
+    container_name: django_web_app
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - django_static:/app/static_content
+      - django_media:/app/media
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy # Ждем, пока БД будет полностью готова принимать соединения
+      redis:
+        condition: service_healthy # Ждем, пока Redis начнет отвечать на ping
+
+
+volumes:
+  postgres_data:
+  redis_data:
+  django_static:
+  django_media:
