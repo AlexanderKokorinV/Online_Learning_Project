@@ -10,8 +10,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
     env_file:
       - .env
-    ports:
-      - "5432:5432"
+    expose: # порт скрыт внутри сети Docker, внешнего подключения нет
+      - "5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
       interval: 5s
@@ -22,6 +22,13 @@ services:
   redis:
     image: redis:7-alpine
     container_name: django_redis
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    expose: # порт скрыт внутри сети Docker, внешнего подключения нет
+      - "6379"
+
     ports:
       - "6379:6379"
     healthcheck:
@@ -30,7 +37,7 @@ services:
       timeout: 3s
       retries: 5
 
-  # 3. Воркер Celery
+  # 3. Асинхронный воркер Celery для фоновых задач
   celery:
     build: .
     container_name: django_celery
@@ -46,7 +53,7 @@ services:
       redis:
         condition: service_healthy
 
-  # 4. Периодические задачи Celery Beat
+  # 4. Планировщик периодических задач Celery Beat
   celery-beat:
     build: .
     container_name: django_celery_beat
@@ -63,7 +70,7 @@ services:
         condition: service_healthy
 
 
-  # 5. Сервис Django приложения
+  # 5. Основное веб-приложение Django (DRF)
   web:
     build: .
     container_name: django_web_app
@@ -85,5 +92,6 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
   django_static:
   django_media:
