@@ -94,7 +94,7 @@ jobs:
             cd ~/Online_Learning_Project || mkdir -p ~/Online_Learning_Project && cd ~/Online_Learning_Project
 
             # Скачиваем обновленный код из ветки main:
-            git pull origin main || git clone https://github.com{{ github.repository }}.git .
+            git pull origin main || git clone https://github.com/${{ github.repository }}.git .
 
             # Перезапускаем всю связку контейнеров (Django, Nginx, Postgres, Redis):
             sudo docker compose down
