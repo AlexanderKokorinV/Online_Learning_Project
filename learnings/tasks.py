@@ -23,7 +23,11 @@ def send_course_update_emails(course_id):
         return f"У курса '{course.title}' нет активных подписчиков."
 
     subject = f"Обновление материалов курса: {course.title}"
-    message = f"Здравствуйте!\n\nМатериалы курса '{course.title}' обновлены. Зайдите на платформу, чтобы изучить новые уроки!"
+    message = (
+        f"Здравствуйте!\n\n"
+        f"Материалы курса '{course.title}' обновлены. "
+        f"Зайдите на платформу, чтобы изучить новые уроки!"
+    )
 
     send_mail(
         subject=subject,
