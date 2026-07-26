@@ -14,7 +14,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # 4. Установка системных утилит и Poetry
-RUN apt-get update && apt-get install --no-install-recommends -y curl \
+RUN apt-get update && apt-get install --no-install-recommends -y curl libpq-dev \
     && curl -sSL https://python-poetry.org | python3 - \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -27,6 +27,11 @@ RUN poetry install --no-root --only main
 # 7. Копирование исходного кода приложения Django
 COPY . .
 
-# 8. Открытие сетевого порта и команда старта
+# 8. Сборка статических файлов для раздачи через Nginx
+RUN poetry run python manage.py collectstatic --noinput
+
+# 9. Открытие сетевого порта для веб-сервера внутри сети Docker
 EXPOSE 8000
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+# 10. Запуск через Gunicorn
+CMD ["poetry", "run", "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
