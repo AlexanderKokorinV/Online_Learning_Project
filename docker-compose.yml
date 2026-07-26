@@ -28,9 +28,6 @@ services:
       - redis_data:/data
     expose: # порт скрыт внутри сети Docker, внешнего подключения нет
       - "6379"
-
-    ports:
-      - "6379:6379"
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -43,8 +40,6 @@ services:
     container_name: django_celery
     restart: always
     command: poetry run celery -A config worker --loglevel=info
-    volumes:
-      - .:/app
     env_file:
       - .env
     depends_on:
@@ -59,8 +54,6 @@ services:
     container_name: django_celery_beat
     restart: always
     command: poetry run celery -A config beat --loglevel=info
-    volumes:
-      - .:/app
     env_file:
       - .env
     depends_on:
@@ -74,13 +67,12 @@ services:
   web:
     build: .
     container_name: django_web_app
-    command: python manage.py runserver 0.0.0.0:8000
+    restart: always
     volumes:
-      - .:/app
-      - django_static:/app/static_content
+      - django_static:/app/static
       - django_media:/app/media
-    ports:
-      - "8000:8000" # Порт открыт для внешнего подключения
+    expose:
+      - "8000" # Порт скрыт внутри сети Docker, наружу на сервер его пробросит Nginx
     env_file:
       - .env
     depends_on:
@@ -88,6 +80,21 @@ services:
         condition: service_healthy # Ждем, пока БД будет полностью готова принимать соединения
       redis:
         condition: service_healthy # Ждем, пока Redis начнет отвечать на ping
+
+  # 6. Фронтенд-сервер Nginx для раздачи статики и проксирования к Gunicorn
+  nginx:
+    image: nginx:stable-alpine
+    container_name: django_nginx
+    restart: always
+    ports:
+      - "80:80" # Открываем стандартный HTTP-порт для всего интернета
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - django_static:/app/static:ro
+      - django_media:/app/media:ro
+    depends_on:
+      - web
+
 
 
 volumes:
