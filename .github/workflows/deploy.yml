@@ -97,7 +97,9 @@ jobs:
             git pull origin main || git clone https://github.com/${{ github.repository }}.git .
             
             # 3. Автоматически создаем актуальный файл .env из секретов GitHub перед запуском Docker
-            echo "${{ secrets.ENV_FILE }}" > .env
+            cat << 'EOF' > .env
+            ${{ secrets.ENV_FILE }}
+            EOF
 
             # 4. Перезапускаем всю связку контейнеров (Django, Nginx, Postgres, Redis):
             sudo docker compose down
