@@ -80,7 +80,7 @@ services:
       - django_static:/app/static_content
       - django_media:/app/media
     ports:
-      - "8000:8000"
+      - "8000:8000" # Порт открыт для внешнего подключения
     env_file:
       - .env
     depends_on:
