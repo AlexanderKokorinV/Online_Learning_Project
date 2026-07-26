@@ -20,8 +20,6 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 
 
-
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -93,7 +91,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
     ],
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema"
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 WSGI_APPLICATION = "config.wsgi.application"
@@ -177,7 +175,7 @@ CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 CELERY_TIMEZONE = TIME_ZONE
-CELERY_ENABLE_UTC = False # Позволяет Celery-Beat использовать локальное время таймзоны
+CELERY_ENABLE_UTC = False  # Позволяет Celery-Beat использовать локальное время таймзоны
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
 
@@ -202,9 +200,9 @@ CACHES = {
     }
 }
 
-#Настройка для отключения кеширования
-#CACHES = {
+# Настройка для отключения кеширования
+# CACHES = {
 #    "default": {
 #        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
 #    }
-#}
+# }
