@@ -15,7 +15,7 @@ WORKDIR /app
 
 # 4. Установка системных утилит и Poetry
 RUN apt-get update && apt-get install --no-install-recommends -y curl libpq-dev \
-    && curl -sSL https://python-poetry.org | python3 - \
+    && curl -sSL https://install.python-poetry.org | python3 - \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # 5. Копирование конфигурационных файлов зависимостей
