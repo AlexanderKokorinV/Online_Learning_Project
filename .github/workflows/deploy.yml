@@ -90,15 +90,18 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Переходим в директорию проекта на сервере Яндекса:
+            # 1. Переходим в директорию проекта на сервере Яндекса:
             cd ~/Online_Learning_Project || mkdir -p ~/Online_Learning_Project && cd ~/Online_Learning_Project
 
-            # Скачиваем обновленный код из ветки main:
+            # 2. Скачиваем обновленный код из ветки main:
             git pull origin main || git clone https://github.com/${{ github.repository }}.git .
+            
+            # 3. Автоматически создаем актуальный файл .env из секретов GitHub перед запуском Docker
+            echo "${{ secrets.ENV_FILE }}" > .env
 
-            # Перезапускаем всю связку контейнеров (Django, Nginx, Postgres, Redis):
+            # 4. Перезапускаем всю связку контейнеров (Django, Nginx, Postgres, Redis):
             sudo docker compose down
             sudo docker compose up -d --build
 
-            # Применяем миграции внутри контейнера:
+            # 5. Применяем миграции внутри контейнера:
             sudo docker compose exec -T web poetry run python manage.py migrate
