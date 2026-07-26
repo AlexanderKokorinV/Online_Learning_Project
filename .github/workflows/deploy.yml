@@ -102,7 +102,7 @@ jobs:
             EOF
 
             # 4. Перезапускаем всю связку контейнеров (Django, Nginx, Postgres, Redis):
-            sudo docker compose down
+            sudo docker compose down -v
             sudo docker compose up -d --build
 
             # 5. Применяем миграции внутри контейнера:
