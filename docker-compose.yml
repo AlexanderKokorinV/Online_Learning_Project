@@ -68,6 +68,7 @@ services:
     build: .
     container_name: django_web_app
     restart: always
+    command: poetry run gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
     volumes:
       - django_static:/app/static
       - django_media:/app/media
@@ -80,6 +81,11 @@ services:
         condition: service_healthy # Ждем, пока БД будет полностью готова принимать соединения
       redis:
         condition: service_healthy # Ждем, пока Redis начнет отвечать на ping
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   # 6. Фронтенд-сервер Nginx для раздачи статики и проксирования к Gunicorn
   nginx:
@@ -93,7 +99,8 @@ services:
       - django_static:/app/static:ro
       - django_media:/app/media:ro
     depends_on:
-      - web
+      web:
+        condition: service_healthy
 
 
 
