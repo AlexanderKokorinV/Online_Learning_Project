@@ -129,9 +129,3 @@ jobs:
 
             # 7. Применяем миграции внутри контейнера:
             sudo docker compose exec -T web python manage.py migrate
-            
-            echo "=== ЛОГИ DJANGO / GUNICORN ==="
-            sudo docker compose logs --tail=30 web
-            
-            echo "=== ОШИБКИ ВЕБ-СЕРВЕРА NGINX ==="
-            sudo docker compose logs --tail=30 nginx

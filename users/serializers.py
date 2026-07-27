@@ -53,7 +53,7 @@ class UserPaymentsHystorySerializer(ModelSerializer):
         fields = (
             "id",
             "user",
-            "payment_date",
+            "created_at",
             "paid_course",
             "paid_lesson",
             "payment_amount",
