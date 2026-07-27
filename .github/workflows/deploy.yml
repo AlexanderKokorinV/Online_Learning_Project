@@ -113,7 +113,7 @@ jobs:
 
             # 5. Перезапускаем всю связку контейнеров (Django, Nginx, Postgres, Redis):
             sudo docker compose down
-            sudo docker compose up -d --build --force-recreate
+            sudo docker compose up -d --build --force-recreate --no-cache
 
             # 6. Применяем миграции внутри контейнера:
             sudo docker compose exec -T web poetry run python manage.py migrate
