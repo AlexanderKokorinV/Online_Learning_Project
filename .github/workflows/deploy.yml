@@ -117,3 +117,5 @@ jobs:
 
             # 6. Применяем миграции внутри контейнера:
             sudo docker compose run --rm web poetry run python manage.py migrate
+            
+            sudo docker compose restart
