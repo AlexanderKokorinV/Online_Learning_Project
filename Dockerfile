@@ -23,7 +23,6 @@ COPY pyproject.toml poetry.lock* ./
 
 # 6. Установка только основных зависимостей проекта
 RUN poetry install --no-root --only main
-RUN poetry run pip install gunicorn
 
 # 7. Копирование исходного кода приложения Django
 COPY . .
@@ -35,4 +34,4 @@ RUN poetry run python manage.py collectstatic --noinput
 EXPOSE 8000
 
 # 10. Запуск через Gunicorn
-CMD ["poetry", "run", "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
