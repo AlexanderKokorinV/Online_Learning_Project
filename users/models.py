@@ -1,0 +1,128 @@
+from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.models import PermissionsMixin
+from django.db import models
+
+from config import settings
+from learnings.models import Course, Lesson
+from users.managers import CustomUserManager
+
+# Create your models here.
+
+
+class User(AbstractBaseUser, PermissionsMixin):
+    """Модель пользователя с email в качестве username"""
+
+    username = None
+    email = models.EmailField(max_length=255, unique=True, verbose_name="Email", help_text="Укажите ваш email")
+    phone_number = models.CharField(
+        max_length=35, null=True, blank=True, verbose_name="Телефон", help_text="Укажите ваш номер телефона"
+    )
+    city = models.CharField(max_length=100, null=True, blank=True, verbose_name="Город", help_text="Укажите ваш город")
+    avatar = models.ImageField(
+        upload_to="users/avatars/", null=True, blank=True, verbose_name="Аватар", help_text="Подгрузите ваш аватар"
+    )
+
+    is_staff = models.BooleanField(default=False, verbose_name="Статус персонала")
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+    is_superuser = models.BooleanField(default=False, verbose_name="Статус суперпользователя")
+
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = []
+
+    objects = CustomUserManager()
+
+    class Meta:
+        verbose_name = "Пользователь"
+        verbose_name_plural = "Пользователи"
+
+    def __str__(self):
+        return self.email
+
+
+class Payments(models.Model):
+    """Модель платежей"""
+
+    PAYMENT_METHODS = [
+        ("cash", "Наличные"),
+        ("transfer", "Перевод на счет"),
+        ("stripe", "Оплата через Stripe"),
+    ]
+
+    STATUS_CHOICES = [
+        ("open", "В процессе"),
+        ("complete", "Оплачен"),
+        ("expired", "Просрочен/Отменен"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="payments",
+        verbose_name="Пользователь",
+    )
+    paid_course = models.ForeignKey(
+        Course,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="payments",
+        verbose_name="Оплаченный курс",
+    )
+    paid_lesson = models.ForeignKey(
+        Lesson,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="payments",
+        verbose_name="Оплаченный урок",
+    )
+    payment_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Сумма оплаты",
+        help_text="Сумма оплаты",
+    )
+    payment_type = models.CharField(
+        max_length=100,
+        choices=PAYMENT_METHODS,
+        verbose_name="Способ оплаты",
+        help_text="Способ оплаты: наличные, перевод на счет или онлайн через Stripe.",
+    )
+
+    # Поля интеграции с платежным сервисом Stripe
+    payment_link = models.URLField(
+        max_length=500,
+        verbose_name="Ссылка на оплату Stripe",
+        blank=True,
+        null=True,
+    )
+    session_id = models.CharField(
+        max_length=255,
+        verbose_name="ID сессии Stripe",
+        blank=True,
+        null=True,
+    )
+    status = models.CharField(
+        max_length=50,
+        choices=STATUS_CHOICES,
+        default="open",
+        verbose_name="Статус платежа",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата и время оплаты",
+    )
+
+    class Meta:
+        verbose_name = "Платеж"
+        verbose_name_plural = "Платежи"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        user_email = self.user.email if self.user else "Пользователь не существует"
+        item_title = (
+            self.paid_course.title if self.paid_course else (self.paid_lesson.title if self.paid_lesson else "Урок")
+        )
+        return f"Платеж от {user_email} за {item_title} на сумму {self.payment_amount}."
