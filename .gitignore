@@ -37,7 +37,7 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Unit test / coverage reports
-#htmlcov/
+htmlcov/
 .tox/
 .nox/
 .coverage
@@ -130,6 +130,9 @@ __pypackages__/
 # Celery stuff
 celerybeat-schedule
 celerybeat.pid
+celerybeat-schedule-shm
+celerybeat-schedule-wal
+celerybeat-schedule.*
 
 # Redis
 *.rdb
@@ -192,3 +195,4 @@ cython_debug/
 
 *.pyc
 media/
+
