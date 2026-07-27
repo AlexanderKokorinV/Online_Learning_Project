@@ -119,3 +119,9 @@ jobs:
             sudo docker compose run --rm web poetry run python manage.py migrate
             
             sudo docker compose up -d --build --force-recreate
+            
+            echo "=== ЛОГИ DJANGO / GUNICORN ==="
+            sudo docker compose logs --tail=30 web
+            
+            echo "=== ОШИБКИ ВЕБ-СЕРВЕРА NGINX ==="
+            sudo docker compose logs --tail=30 nginx
