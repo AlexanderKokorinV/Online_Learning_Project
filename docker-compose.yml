@@ -95,7 +95,7 @@ services:
     ports:
       - "80:80" # Открываем стандартный HTTP-порт для всего интернета
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - django_static:/app/static:ro
       - django_media:/app/media:ro
     depends_on:
